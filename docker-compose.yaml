@@ -27,6 +27,21 @@ services:
       start_period: 30s
     networks:
       - kafka-network
+
+  signal_simulator:
+    build:
+      context: ./signal_simulator
+      dockerfile: Dockerfile
+    container_name: signal_simulator
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: signals
+      MESSAGE_INTERVAL: 1
+    networks:
+      - kafka-network
       
 volumes:
   kafka_data:
