@@ -89,7 +89,22 @@ services:
       OUTPUT_KAFKA_TOPIC: tickets_formatted
     networks:
       - kafka-network
-      
+
+  
+  ticket_labeller:
+    build:
+      context: ./ticket-labeller
+      dockerfile: Dockerfile
+    container_name: ticket_labeller
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+    networks:
+      - kafka-network
+
 volumes:
   kafka_data:
     driver: local
