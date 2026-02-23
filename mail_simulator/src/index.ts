@@ -9,11 +9,13 @@ const DRY_RUN = process.env.DRY_RUN === 'true' || process.env.DRY_RUN === '1';
 
 // Email message interface
 interface EmailMessage {
-  email_id: string;
-  sender: string;
-  message: string;
-  date: string;
-  files: string[];
+  messageId: string;
+  from: string;
+  to: string;
+  subject: string;
+  body: string;
+  timestamp: string;
+  attachments: string[];
 }
 
 // Possible issue types for customer support emails
@@ -205,18 +207,20 @@ function generateEmail(): EmailMessage {
   const urgency = faker.helpers.arrayElement(urgencies);
   
   const numFiles = faker.number.int({ min: 0, max: 3 });
-  const files = numFiles > 0 
+  const attachments = numFiles > 0 
     ? faker.helpers.arrayElements(fileTypes, numFiles)
     : [];
 
-  const message = `Hello Support Team,\n\n${issueType}.\n\n${timeFrame} ${impact}. ${attempt} ${context}\n\n${urgency}\n\nThank you,\n${faker.person.firstName()}`;
+  const body = `Hello Support Team,\n\n${issueType}.\n\n${timeFrame} ${impact}. ${attempt} ${context}\n\n${urgency}\n\nThank you,\n${faker.person.firstName()}`;
 
   return {
-    email_id: faker.string.uuid(),
-    sender: faker.internet.email(),
-    message,
-    date: new Date().toISOString(),
-    files
+    messageId: faker.string.uuid(),
+    from: faker.internet.email(),
+    to: 'support@company.com',
+    subject: `[Support] ${issueType}`,
+    body,
+    timestamp: new Date().toISOString(),
+    attachments
   };
 }
 
@@ -239,12 +243,12 @@ async function sendEmail(producer: Producer, email: EmailMessage): Promise<void>
     topic: KAFKA_TOPIC,
     messages: [
       {
-        key: email.email_id,
+        key: email.messageId,
         value: JSON.stringify(email)
       }
     ]
   });
-  console.log(`Sent email from ${email.sender} (ID: ${email.email_id})`);
+  console.log(`Sent email from ${email.from} (ID: ${email.messageId}) - Subject: ${email.subject}`);
 }
 
 // Main function
