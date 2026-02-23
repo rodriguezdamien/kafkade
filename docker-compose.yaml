@@ -58,6 +58,22 @@ services:
       DRY_RUN: "false"
     networks:
       - kafka-network
+
+  mail_formatter:
+    build:
+      context: ./mail_formatter
+      dockerfile: Dockerfile
+    container_name: mail_formatter
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_INPUT_TOPIC: mails
+      KAFKA_OUTPUT_TOPIC: tickets_formatted
+      KAFKA_GROUP_ID: mail-formatter-group
+    networks:
+      - kafka-network
       
 volumes:
   kafka_data:
