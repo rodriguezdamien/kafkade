@@ -7,6 +7,8 @@ interface SignalMessage {
   message: string;
   date: string;
   files: string[];
+  signal_instance: string;
+  emojis?: string[];
 }
 
 class SignalSimulator {
@@ -44,6 +46,8 @@ class SignalSimulator {
       sender: faker.person.fullName(),
       message: faker.lorem.sentence(),
       date: new Date().toISOString(),
+      signal_instance: faker.string.uuid(),
+      emojis: faker.helpers.arrayElements(['😀', '🚀', '🔥', '💡', '📈'], faker.number.int({ min: 0, max: 3 })),
       files,
     };
   }
