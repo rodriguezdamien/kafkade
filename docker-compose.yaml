@@ -74,6 +74,21 @@ services:
       KAFKA_GROUP_ID: mail-formatter-group
     networks:
       - kafka-network
+
+  signal_consumer:
+    build:
+      context: ./signal_consumer
+      dockerfile: Dockerfile
+    container_name: signal_consumer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      INPUT_KAFKA_TOPIC: signals
+      OUTPUT_KAFKA_TOPIC: tickets_formatted
+    networks:
+      - kafka-network
       
 volumes:
   kafka_data:
