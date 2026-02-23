@@ -1,13 +1,23 @@
 {
   "name": "signal_simulator",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Signal simulator for Kafka testing",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.24.0"
+  "packageManager": "pnpm@10.24.0",
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "@faker-js/faker": "^8.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "typescript": "^5.3.3"
+  }
 }
