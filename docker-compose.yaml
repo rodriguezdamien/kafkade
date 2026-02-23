@@ -42,6 +42,22 @@ services:
       MESSAGE_INTERVAL: 1
     networks:
       - kafka-network
+
+  mail_simulator:
+    build:
+      context: ./mail_simulator
+      dockerfile: Dockerfile
+    container_name: mail_simulator
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: mails
+      MESSAGE_INTERVAL: 2
+      DRY_RUN: "false"
+    networks:
+      - kafka-network
       
 volumes:
   kafka_data:
