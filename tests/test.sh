@@ -15,7 +15,7 @@ sleep 15
 # Check if signal_simulator is running
 if ! docker ps | grep -q signal_simulator; then
     echo "ERROR: signal_simulator container is not running"
-    docker-compose logs signal_simulator
+    docker compose logs signal_simulator
     exit 1
 fi
 
@@ -39,7 +39,7 @@ fi
 # Try to consume messages from Kafka
 echo ""
 echo "=== Consuming messages from Kafka ==="
-docker compose exec -T kafka kafka-console-consumer \
+docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
     --bootstrap-server localhost:9092 \
     --topic signals \
     --from-beginning \
