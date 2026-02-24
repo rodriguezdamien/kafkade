@@ -6,10 +6,10 @@ import { OpenRouter } from '@openrouter/sdk';
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 
-const INPUT_TOPIC = 'formatted-tickets';
-const OUTPUT_TOPIC = 'labeled-tickets';
-const DLQ_TOPIC = 'labeled-tickets-dlq';
-const CONSUMER_GROUP = 'ticket-labeller';
+const INPUT_TOPIC = 'tickets_formatted';
+const OUTPUT_TOPIC = 'tickets_labeled';
+const DLQ_TOPIC = 'tickets_labeled_dlq';
+const CONSUMER_GROUP = 'ticket_labeller';
 // please openrouter don't make me pay any fees
 const MESSAGE_INTERVAL_MS = 5000;
 
@@ -24,8 +24,9 @@ const FREE_MODELS = [
 interface FormattedTicket {
   id: string;
   sender: string;
-  content: string;
+  message: string;
   date: string;
+  files: Array<string>;
 }
 
 type Label = 'Mobile' | 'Web' | 'Back-end' | 'Infra';
@@ -41,11 +42,12 @@ interface AIResponse {
 interface LabeledTicket {
   id: string;
   sender: string;
-  content: string;
+  message: string;
   labels: Label[];
   type: TicketType;
   date: string;
   priority: number;
+  files: Array<string>;
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -96,7 +98,7 @@ function validateAIResponse(data: unknown, ticketId: string): AIResponse {
 function buildPrompt(ticket: FormattedTicket): string {
   const ticketJson = JSON.stringify(
     {
-      content: ticket.content,
+      message: ticket.message,
       sender: ticket.sender,
       id: ticket.id,
       date: ticket.date,
@@ -247,6 +249,7 @@ class TicketLabeller {
   }
 
   private async processMessage({ topic, partition, message }: EachMessagePayload): Promise<void> {
+    console.log("SLEEPING BEFORE PROCESSING!");
     await sleep(MESSAGE_INTERVAL_MS); // Waiting in order to prevent spamming openrouter
     const rawValue = message.value?.toString();
     const rawKey = message.key?.toString() ?? null;
