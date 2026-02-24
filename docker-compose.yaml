@@ -147,6 +147,21 @@ services:
     networks:
       - kafka-network
 
+  web_dashboard:
+    build:
+      context: ./web-dashboard
+      dockerfile: Dockerfile
+    container_name: web_dashboard
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "3000:3000"
+    networks:
+      - kafka-network
+
 volumes:
   kafka_data:
     driver: local
