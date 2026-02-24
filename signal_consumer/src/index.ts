@@ -24,11 +24,13 @@ class SignalConsumer {
   private producer: Producer;
   private inputTopic: string;
   private outputTopic: string;
+  private dlqTopic: string;
 
   constructor() {
     const kafkaBroker = process.env.KAFKA_BROKER || 'localhost:9092';
     this.inputTopic = process.env.INPUT_KAFKA_TOPIC || 'signals';
     this.outputTopic = process.env.OUTPUT_KAFKA_TOPIC || 'tickets_formatted';
+    this.dlqTopic = process.env.KAFKA_DLQ_TOPIC || 'signal_dlq';
 
     this.kafka = new Kafka({
       clientId: 'signal-consumer',
@@ -64,6 +66,7 @@ class SignalConsumer {
     console.log(`Kafka Broker: ${process.env.KAFKA_BROKER || 'localhost:9092'}`);
     console.log(`Input Topic: ${this.inputTopic}`);
     console.log(`Output Topic: ${this.outputTopic}`);
+    console.log(`DLQ Topic: ${this.dlqTopic}`);
 
     await this.consumer.connect();
     await this.producer.connect();
@@ -98,6 +101,43 @@ class SignalConsumer {
           console.log(`Transformed message: ${inputMessage.signal_id} -> ${outputMessage.id} from ${outputMessage.sender}`);
         } catch (error) {
           console.error('Error processing message:', error);
+          if (message.value) {
+            console.error('Message content:', message.value.toString());
+          }
+
+          // Send failed message to Dead Letter Queue
+          try {
+            // Preserve original headers and add error metadata
+            const dlqHeaders: Record<string, string> = {
+              'error-message': error instanceof Error ? error.message : String(error),
+              'error-timestamp': new Date().toISOString(),
+              'original-topic': topic,
+              'original-partition': partition.toString(),
+              'original-offset': message.offset,
+              'original-timestamp': message.timestamp
+            };
+
+            // Include original headers if present
+            if (message.headers) {
+              Object.entries(message.headers).forEach(([key, value]) => {
+                dlqHeaders[`original-header-${key}`] = value?.toString() || '';
+              });
+            }
+
+            await this.producer.send({
+              topic: this.dlqTopic,
+              messages: [
+                {
+                  key: message.key?.toString() || null,
+                  value: message.value,
+                  headers: dlqHeaders
+                }
+              ]
+            });
+            console.log(`Message sent to DLQ: ${this.dlqTopic} (offset: ${message.offset}, partition: ${partition})`);
+          } catch (dlqError) {
+            console.error('Failed to send message to DLQ:', dlqError);
+          }
         }
       },
     });

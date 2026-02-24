@@ -88,6 +88,7 @@ services:
       KAFKA_BROKER: kafka:9092
       INPUT_KAFKA_TOPIC: signals
       OUTPUT_KAFKA_TOPIC: tickets_formatted
+      KAFKA_DLQ_TOPIC: signal_dlq
     networks:
       - kafka-network
 
