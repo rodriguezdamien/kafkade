@@ -10,6 +10,8 @@ const INPUT_TOPIC = 'formatted-tickets';
 const OUTPUT_TOPIC = 'labeled-tickets';
 const DLQ_TOPIC = 'labeled-tickets-dlq';
 const CONSUMER_GROUP = 'ticket-labeller';
+// please openrouter don't make me pay any fees
+const MESSAGE_INTERVAL_MS = 5000;
 
 const FREE_MODELS = [
   'meta-llama/llama-3.1-8b-instruct:free',
@@ -202,6 +204,10 @@ async function sendToDLQ(
   console.log(`[dlq] Record (key=${key}) sent to ${DLQ_TOPIC} — reason: ${reason}`);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 class TicketLabeller {
@@ -228,7 +234,11 @@ class TicketLabeller {
       },
     });
 
-    this.consumer = this.kafka.consumer({ groupId: CONSUMER_GROUP });
+    this.consumer = this.kafka.consumer({
+      groupId: CONSUMER_GROUP,
+      sessionTimeout: 60_000,
+      heartbeatInterval: 15_000,
+    });
     this.producer = this.kafka.producer();
 
     this.openRouter = new OpenRouter({
@@ -237,6 +247,7 @@ class TicketLabeller {
   }
 
   private async processMessage({ topic, partition, message }: EachMessagePayload): Promise<void> {
+    await sleep(MESSAGE_INTERVAL_MS); // Waiting in order to prevent spamming openrouter
     const rawValue = message.value?.toString();
     const rawKey = message.key?.toString() ?? null;
 
