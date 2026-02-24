@@ -1,5 +1,5 @@
 {
-  "name": "ticket-labeller",
+  "name": "ticket-labelizer",
   "version": "1.0.0",
   "description": "A Kafka service that labels formatted tickets using a local Ollama model",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
     "dev": "ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["kafka", "labeller", "ticket", "ollama"],
+  "keywords": ["kafka", "labelizer", "ticket", "ollama"],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.24.0",

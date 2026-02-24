@@ -1,8 +1,8 @@
-# Ticket-Labeller
+# Ticket-Labelizer
 
 ## What's This?
 
-The Ticket-Labeller is a TypeScript service that consumes messages from the **Formatted Tickets** queue in Kafka (using KafkaJS), enriches them with labels, a type, and a priority using a local Ollama model, and then publishes the resulting **Labelled Tickets** to a downstream Kafka queue.
+The Ticket-Labelizer is a TypeScript service that consumes messages from the **Formatted Tickets** queue in Kafka (using KafkaJS), enriches them with labels, a type, and a priority using a local Ollama model, and then publishes the resulting **Labelled Tickets** to a downstream Kafka queue.
 
 ### Labels, Types, and Priorities
 
@@ -42,7 +42,7 @@ After labelling, the service produces a JSON object with the following structure
 To assign labels, determine the type, and set the priority, the service sends each ticket to a local Ollama model via the [ollama-js library](https://github.com/ollama/ollama-js). The model is prompted to analyse the ticket content and return structured metadata. The prompt template is as follows:
 
 ```
-You are a support ticket labeller. You receive a support ticket with the following content: 
+You are a support ticket labelizer. You receive a support ticket with the following content: 
 {
   "message": "This is a sample ticket content.",
   "sender": "user@example.com",

@@ -114,11 +114,11 @@ services:
       - kafka-network
 
 
-  ticket_labeller:
+  ticket_labelizer:
     build:
-      context: ./ticket-labeller
+      context: ./ticket-labelizer
       dockerfile: Dockerfile
-    container_name: ticket_labeller
+    container_name: ticket_labelizer
     depends_on:
       kafka:
         condition: service_healthy

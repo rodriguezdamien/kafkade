@@ -113,7 +113,7 @@ function buildPrompt(ticket: FormattedTicket): string {
     2,
   );
 
-  return `You are a support ticket labeller. You receive a support ticket with the following content: 
+  return `You are a support ticket labelizer. You receive a support ticket with the following content: 
 ${ticketJson}
 
 Your task is to label this ticket with the following labels: Mobile, Web, Back-end, Infra. You can choose multiple labels for a single ticket. You also need to define the type of the ticket, which can be either bug, feature or question. Finally, you need to prioritize the ticket from 0 (Most important) to 3 (Least important).
@@ -216,7 +216,7 @@ async function sendToDLQ(
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-class TicketLabeller {
+class Ticketlabelizer {
   private kafka: Kafka;
   private consumer: Consumer;
   private producer: Producer;
@@ -225,7 +225,7 @@ class TicketLabeller {
 
   constructor() {
     this.kafka = new Kafka({
-      clientId: 'ticket-labeller',
+      clientId: 'ticket-labelizer',
       brokers: [KAFKA_BROKER],
       retry: {
         retries: 10,
@@ -336,7 +336,7 @@ class TicketLabeller {
   }
 
   async start(): Promise<void> {
-    console.log('Starting Ticket Labeller...');
+    console.log('Starting Ticket labelizer...');
     console.log(`Kafka Broker:     ${KAFKA_BROKER}`);
     console.log(`Ollama Host:      ${OLLAMA_HOST}`);
     console.log(`Ollama Model:     ${OLLAMA_MODEL}`);
@@ -361,11 +361,11 @@ class TicketLabeller {
       },
     });
 
-    console.log('Ticket Labeller is running. Waiting for messages...');
+    console.log('Ticket labelizer is running. Waiting for messages...');
   }
 
   async stop(): Promise<void> {
-    console.log('Shutting down Ticket Labeller...');
+    console.log('Shutting down Ticket labelizer...');
     await this.consumer.disconnect();
     console.log('Consumer disconnected');
     await this.producer.disconnect();
@@ -375,21 +375,21 @@ class TicketLabeller {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
-const labeller = new TicketLabeller();
+const labelizer = new Ticketlabelizer();
 
 process.on('SIGTERM', async () => {
   console.log('Received SIGTERM, shutting down...');
-  await labeller.stop();
+  await labelizer.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('Received SIGINT, shutting down...');
-  await labeller.stop();
+  await labelizer.stop();
   process.exit(0);
 });
 
-labeller.start().catch((error) => {
-  console.error('Failed to start Ticket Labeller:', error);
+labelizer.start().catch((error) => {
+  console.error('Failed to start Ticket labelizer:', error);
   process.exit(1);
 });
