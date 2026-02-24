@@ -11,7 +11,8 @@ const DLQ_TOPICS = [
   'signal_dlq',
 ];
 
-const RETRY_DELAYS = [30000, 120000, 300000];
+// Retry delays: immediate (0s), 30s, 2 minutes (120s)
+const RETRY_DELAYS = [0, 30000, 120000];
 
 interface ErrorStats {
   count: number;
@@ -153,8 +154,11 @@ class DLQRetryService {
       return;
     }
 
-    // Calculate delay before retry
-    const delay = currentRetryCount > 0 ? (RETRY_DELAYS[currentRetryCount - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1]) : 0;
+    // Calculate delay before retry (indexed by retry attempt number)
+    // Attempt 1: RETRY_DELAYS[0] = 0ms (immediate)
+    // Attempt 2: RETRY_DELAYS[1] = 30000ms (30s)
+    // Attempt 3: RETRY_DELAYS[2] = 120000ms (2min)
+    const delay = RETRY_DELAYS[currentRetryCount] || 0;
     
     if (delay > 0) {
       console.log(`   Waiting ${delay / 1000}s before retry...`);
