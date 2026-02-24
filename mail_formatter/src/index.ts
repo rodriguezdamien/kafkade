@@ -95,10 +95,21 @@ async function processMessage(payload: EachMessagePayload): Promise<void> {
         'original-timestamp': message.timestamp
       };
 
-      // Include original headers if present
+      // Preserve important retry headers directly (without prefix)
+      const retryHeaders = ['retry-from-dlq', 'retry-attempt', 'original-dlq-topic'];
+      
       if (message.headers) {
         Object.entries(message.headers).forEach(([key, value]) => {
-          dlqHeaders[`original-header-${key}`] = value?.toString() || '';
+          const strValue = value?.toString() || '';
+          
+          // Copy retry-related headers directly
+          if (retryHeaders.includes(key)) {
+            dlqHeaders[key] = strValue;
+          }
+          // Copy other headers with prefix
+          else {
+            dlqHeaders[`original-header-${key}`] = strValue;
+          }
         });
       }
 
