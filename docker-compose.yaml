@@ -92,7 +92,6 @@ services:
     networks:
       - kafka-network
 
-  
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -113,7 +112,7 @@ services:
     networks:
       - kafka-network
 
-
+ 
   ticket_labelizer:
     build:
       context: ./ticket-labelizer
@@ -129,6 +128,22 @@ services:
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral}
       MESSAGE_INTERVAL_MS: 10000
+    networks:
+      - kafka-network
+
+ dlq_retry_service:
+    build:
+      context: ./dlq_retry_service
+      dockerfile: Dockerfile
+    container_name: dlq_retry_service
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      MAX_RETRY_ATTEMPTS: 3
+      KAFKA_GROUP_ID: dlq-retry-service-group
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     networks:
       - kafka-network
 
