@@ -93,6 +93,27 @@ services:
       - kafka-network
 
   
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./scripts/ollama-entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral}
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    networks:
+      - kafka-network
+
+
   ticket_labeller:
     build:
       context: ./ticket-labeller
@@ -101,14 +122,20 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     environment:
       KAFKA_BROKER: kafka:9092
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral}
+      MESSAGE_INTERVAL_MS: 10000
     networks:
       - kafka-network
 
 volumes:
   kafka_data:
+    driver: local
+  ollama_data:
     driver: local
 
 networks:
