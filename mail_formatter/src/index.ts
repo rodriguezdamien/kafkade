@@ -4,6 +4,7 @@ import { Kafka, Consumer, Producer, EachMessagePayload } from 'kafkajs';
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 const KAFKA_INPUT_TOPIC = process.env.KAFKA_INPUT_TOPIC || 'mails';
 const KAFKA_OUTPUT_TOPIC = process.env.KAFKA_OUTPUT_TOPIC || 'tickets_formatted';
+const KAFKA_DLQ_TOPIC = process.env.KAFKA_DLQ_TOPIC || 'mail_dlq';
 const KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || 'mail-formatter-group';
 
 // Input format (EmailMessage from mail_simulator)
@@ -49,7 +50,7 @@ const producer: Producer = kafka.producer();
 
 // Process each message
 async function processMessage(payload: EachMessagePayload): Promise<void> {
-  const { message } = payload;
+  const { message, topic, partition } = payload;
   
   if (!message.value) {
     console.warn('Received message with no value, skipping...');
@@ -75,11 +76,45 @@ async function processMessage(payload: EachMessagePayload): Promise<void> {
       ]
     });
 
-    console.log(`✓ Formatted and sent ticket ${ticket.id} to ${KAFKA_OUTPUT_TOPIC}`);
+    console.log(`Formatted and sent ticket ${ticket.id} to ${KAFKA_OUTPUT_TOPIC}`);
   } catch (error) {
     console.error('Error processing message:', error);
     if (message.value) {
       console.error('Message content:', message.value.toString());
+    }
+    
+    // Send failed message to Dead Letter Queue
+    try {
+      // Preserve original headers and add error metadata
+      const dlqHeaders: Record<string, string> = {
+        'error-message': error instanceof Error ? error.message : String(error),
+        'error-timestamp': new Date().toISOString(),
+        'original-topic': topic,
+        'original-partition': partition.toString(),
+        'original-offset': message.offset,
+        'original-timestamp': message.timestamp
+      };
+
+      // Include original headers if present
+      if (message.headers) {
+        Object.entries(message.headers).forEach(([key, value]) => {
+          dlqHeaders[`original-header-${key}`] = value?.toString() || '';
+        });
+      }
+
+      await producer.send({
+        topic: KAFKA_DLQ_TOPIC,
+        messages: [
+          {
+            key: message.key?.toString() || null,
+            value: message.value,
+            headers: dlqHeaders
+          }
+        ]
+      });
+      console.log(`Message sent to DLQ: ${KAFKA_DLQ_TOPIC} (offset: ${message.offset}, partition: ${partition})`);
+    } catch (dlqError) {
+      console.error('Failed to send message to DLQ:', dlqError);
     }
   }
 }
@@ -90,6 +125,7 @@ async function main() {
   console.log(`Kafka Broker: ${KAFKA_BROKER}`);
   console.log(`Input Topic: ${KAFKA_INPUT_TOPIC}`);
   console.log(`Output Topic: ${KAFKA_OUTPUT_TOPIC}`);
+  console.log(`DLQ Topic: ${KAFKA_DLQ_TOPIC}`);
   console.log(`Consumer Group: ${KAFKA_GROUP_ID}\n`);
 
   try {
