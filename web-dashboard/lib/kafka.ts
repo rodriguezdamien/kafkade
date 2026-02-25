@@ -23,28 +23,31 @@ export interface KafkaMessage {
 
 export async function fetchMessagesFromTopic(
   topic: string,
-  limit: number = 50
+  limit: number = 50,
+  fromEnd: boolean = false
 ): Promise<KafkaMessage[]> {
   const consumer = kafka.consumer({ 
     groupId: `dashboard-${topic}-${Date.now()}` 
   });
   
   const messages: KafkaMessage[] = [];
+  let isRunning = true;
+  let consumerRunning = false;
 
   try {
     await consumer.connect();
-    await consumer.subscribe({ topic, fromBeginning: false });
+    await consumer.subscribe({ topic, fromBeginning: !fromEnd });
 
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        resolve();
-      }, 5000); // 5 second timeout
-
+    const messagePromise = new Promise<void>((resolve) => {
+      let lastMessageTime = Date.now();
+      let checkInterval: NodeJS.Timeout;
+      
       consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
+          consumerRunning = true;
+          lastMessageTime = Date.now();
+          
           if (messages.length >= limit) {
-            clearTimeout(timeout);
-            resolve();
             return;
           }
 
@@ -64,19 +67,38 @@ export async function fetchMessagesFromTopic(
             value: message.value?.toString() || '',
             headers,
           });
-
-          if (messages.length >= limit) {
-            clearTimeout(timeout);
-            resolve();
-          }
         },
-      }).catch(reject);
+      });
+      
+      // Check if we should stop
+      checkInterval = setInterval(() => {
+        const idleTime = fromEnd ? 3000 : 5000; // Give more time for beginning reads
+        if (!isRunning || messages.length >= limit || (consumerRunning && Date.now() - lastMessageTime > idleTime)) {
+          clearInterval(checkInterval);
+          isRunning = false;
+          resolve();
+        }
+      }, 500);
+      
+      // Maximum timeout - increased to let consumer join group
+      setTimeout(() => {
+        if (checkInterval) clearInterval(checkInterval);
+        isRunning = false;
+        resolve();
+      }, 35000); // Increased to 35s to allow group join + consumption
     });
 
+    await messagePromise;
+    
+    // Properly stop the consumer before disconnecting
+    await consumer.stop();
     await consumer.disconnect();
     return messages;
   } catch (error) {
     console.error(`Error fetching messages from ${topic}:`, error);
+    try {
+      await consumer.stop();
+    } catch (e) {}
     await consumer.disconnect().catch(() => {});
     return [];
   }
