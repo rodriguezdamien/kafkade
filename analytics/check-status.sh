@@ -25,36 +25,57 @@ done
 echo ""
 
 # Check supervisor status
-echo "2. Checking Ingestion Supervisor..."
+echo "2. Checking Ingestion Supervisors..."
 echo "----------------------------------------"
 
+echo "  Tickets (Labelized):"
 SUPERVISOR_STATUS=$(curl -s http://localhost:8888/druid/indexer/v1/supervisor/tickets/status 2>/dev/null || echo "{}")
 
 if echo "$SUPERVISOR_STATUS" | grep -q "RUNNING"; then
     STATE=$(echo "$SUPERVISOR_STATUS" | jq -r '.payload.state' 2>/dev/null || echo "UNKNOWN")
-    echo "  ✓ Supervisor state: $STATE"
+    echo "    ✓ Supervisor state: $STATE"
     
     # Get lag info
     LAG=$(echo "$SUPERVISOR_STATUS" | jq -r '.payload.stats.totals.lag' 2>/dev/null || echo "N/A")
     PROCESSED=$(echo "$SUPERVISOR_STATUS" | jq -r '.payload.stats.totals.processed' 2>/dev/null || echo "N/A")
     
-    echo "  • Processed messages: $PROCESSED"
-    echo "  • Current lag: $LAG"
+    echo "    • Processed messages: $PROCESSED"
+    echo "    • Current lag: $LAG"
 elif echo "$SUPERVISOR_STATUS" | grep -q "Unknown supervisor"; then
-    echo "  ⚠️  No supervisor configured"
-    echo "     Run: bash analytics/start-ingestion.sh"
+    echo "    ⚠️  No supervisor configured"
+    echo "       Run: bash analytics/start-ingestion.sh"
 else
-    echo "  ⚠️  Supervisor not running"
+    echo "    ⚠️  Supervisor not running"
+fi
+
+echo "  Tickets (Formatted):"
+SUPERVISOR_FORMATTED=$(curl -s http://localhost:8888/druid/indexer/v1/supervisor/tickets_formatted/status 2>/dev/null || echo "{}")
+
+if echo "$SUPERVISOR_FORMATTED" | grep -q "RUNNING"; then
+    STATE=$(echo "$SUPERVISOR_FORMATTED" | jq -r '.payload.state' 2>/dev/null || echo "UNKNOWN")
+    echo "    ✓ Supervisor state: $STATE"
+    
+    # Get lag info
+    LAG=$(echo "$SUPERVISOR_FORMATTED" | jq -r '.payload.stats.totals.lag' 2>/dev/null || echo "N/A")
+    PROCESSED=$(echo "$SUPERVISOR_FORMATTED" | jq -r '.payload.stats.totals.processed' 2>/dev/null || echo "N/A")
+    
+    echo "    • Processed messages: $PROCESSED"
+    echo "    • Current lag: $LAG"
+elif echo "$SUPERVISOR_FORMATTED" | grep -q "Unknown supervisor"; then
+    echo "    ⚠️  No supervisor configured"
+    echo "       Run: bash analytics/start-ingestion-formatted.sh"
+else
+    echo "    ⚠️  Supervisor not running"
 fi
 echo ""
 
-# Check datasource
-echo "3. Checking Datasource..."
+# Check datasources
+echo "3. Checking Datasources..."
 echo "----------------------------------------"
 
 DATASOURCES=$(curl -s http://localhost:8888/druid/coordinator/v1/datasources 2>/dev/null || echo "[]")
 
-if echo "$DATASOURCES" | grep -q "tickets"; then
+if echo "$DATASOURCES" | grep -q "\"tickets\""; then
     echo "  ✓ Datasource 'tickets' exists"
     
     # Get segment info
@@ -62,10 +83,24 @@ if echo "$DATASOURCES" | grep -q "tickets"; then
     SEGMENT_COUNT=$(echo "$SEGMENTS" | jq -r '.segments | length' 2>/dev/null || echo "0")
     SIZE=$(echo "$SEGMENTS" | jq -r '.properties.segments.size' 2>/dev/null || echo "N/A")
     
-    echo "  • Segments: $SEGMENT_COUNT"
-    echo "  • Size: $SIZE bytes"
+    echo "    • Segments: $SEGMENT_COUNT"
+    echo "    • Size: $SIZE bytes"
 else
     echo "  ⚠️  Datasource 'tickets' not found"
+fi
+
+if echo "$DATASOURCES" | grep -q "tickets_formatted"; then
+    echo "  ✓ Datasource 'tickets_formatted' exists"
+    
+    # Get segment info
+    SEGMENTS=$(curl -s http://localhost:8888/druid/coordinator/v1/datasources/tickets_formatted?full 2>/dev/null)
+    SEGMENT_COUNT=$(echo "$SEGMENTS" | jq -r '.segments | length' 2>/dev/null || echo "0")
+    SIZE=$(echo "$SEGMENTS" | jq -r '.properties.segments.size' 2>/dev/null || echo "N/A")
+    
+    echo "    • Segments: $SEGMENT_COUNT"
+    echo "    • Size: $SIZE bytes"
+else
+    echo "  ⚠️  Datasource 'tickets_formatted' not found"
 fi
 echo ""
 

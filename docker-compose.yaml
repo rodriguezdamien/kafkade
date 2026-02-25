@@ -54,7 +54,7 @@ services:
     environment:
       KAFKA_BROKER: kafka:9092
       KAFKA_TOPIC: mails
-      MESSAGE_INTERVAL: 2
+      MESSAGE_INTERVAL: 1
       DRY_RUN: "false"
     networks:
       - kafka-network
@@ -276,6 +276,8 @@ services:
       - druid_processing_numThreads=2
     command:
       - historical
+    working_dir: /opt/druid
+    user: "root"
     volumes:
       - druid_historical_var:/opt/druid/var
       - druid_segments:/opt/druid/var/druid/segments
@@ -302,6 +304,8 @@ services:
       - druid_indexer_fork_property_druid_processing_numThreads=2
     command:
       - middleManager
+    working_dir: /opt/druid
+    user: "root"
     volumes:
       - druid_middlemanager_var:/opt/druid/var
     networks:

@@ -11,6 +11,16 @@ interface SignalMessage {
   emojis?: string[];
 }
 
+const problems = [
+  "Hello, there is a problem with my server, I think that the application can't reach the proxy... Maybe that's a problem with the DevOps team ?",
+  "I've discussed with Max yesterday, he suggested me to remove some of our features, maybe we should look at it ?",
+  "My application stopped working 2 months ago and I really need it now ! When I try to login I've some sort of bug and everything crashed...",
+  "Hello Senior, my support ticket is still open and I don't have any news about it, can you please check it ?",
+  "Some shitty things happened on my internet, it's like the connection is stopping, can you help me ?",
+  "I don't know if it's a problem with the proxy or the database but I can't access to my data, can you please check it ?",
+  "My application is in french and I hate french, give me advices !"
+]
+
 class SignalSimulator {
   private kafka: Kafka;
   private producer: Producer;
@@ -44,7 +54,7 @@ class SignalSimulator {
     return {
       signal_id: faker.string.uuid(),
       sender: faker.person.fullName(),
-      message: faker.lorem.sentence(),
+      message: problems[faker.number.int({ min: 0, max: problems.length - 1 })],
       date: new Date().toISOString(),
       signal_instance: faker.string.uuid(),
       emojis: faker.helpers.arrayElements(['😀', '🚀', '🔥', '💡', '📈'], faker.number.int({ min: 0, max: 3 })),

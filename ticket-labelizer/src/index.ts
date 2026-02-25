@@ -24,8 +24,8 @@ interface FormattedTicket {
   files?: string[];
 }
 
-type Label = 'Mobile' | 'Web' | 'Back-end' | 'Infra';
-type TicketType = 'bug' | 'feature' | 'question';
+type Label = 'Mobile' | 'Web' | 'Back-end' | 'Infra' | 'Front-end';
+type TicketType = 'bug' | 'feature' | 'question' | 'suggestion';
 
 interface AIResponse {
   id: string;
@@ -53,8 +53,8 @@ function sleep(ms: number): Promise<void> {
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
-const VALID_LABELS: Label[] = ['Mobile', 'Web', 'Back-end', 'Infra'];
-const VALID_TYPES: TicketType[] = ['bug', 'feature', 'question'];
+const VALID_LABELS: Label[] = ['Mobile', 'Web', 'Back-end', 'Infra', 'Front-end'];
+const VALID_TYPES: TicketType[] = ['bug', 'feature', 'question', 'suggestion'];
 
 function validateAIResponse(data: unknown, ticketId: string): AIResponse {
   if (typeof data !== 'object' || data === null) {
@@ -86,8 +86,8 @@ function validateAIResponse(data: unknown, ticketId: string): AIResponse {
 
   // Validate priority
   const priority = Number(obj.priority);
-  if (!Number.isInteger(priority) || priority < 0 || priority > 3) {
-    throw new Error(`Invalid priority: "${obj.priority}". Must be an integer between 0 and 3`);
+  if (!Number.isInteger(priority) || priority < 0 || priority > 5) {
+    throw new Error(`Invalid priority: "${obj.priority}". Must be an integer between 0 and 5`);
   }
 
   return {

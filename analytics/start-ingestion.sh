@@ -3,6 +3,10 @@
 
 set -e
 
+# Get the script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 echo "=== Submitting Druid Ingestion Spec ==="
 echo ""
 
@@ -26,11 +30,29 @@ if echo "$EXISTING" | grep -q "tickets"; then
     exit 0
 fi
 
+if echo "$EXISTING" | grep -q "formatted"; then
+    echo "⚠️  Supervisor 'formatted' already exists"
+    echo "   To update, first terminate the existing supervisor:"
+    echo "   bash analytics/terminate-ingestion.sh"
+    exit 0
+fi
+
+
 # Submit the ingestion spec
 echo "Submitting ingestion specification..."
 RESPONSE=$(curl -s -X POST \
     -H 'Content-Type: application/json' \
-    -d @druid/tickets-ingestion-spec.json \
+    -d @"$PROJECT_ROOT/druid/tickets-ingestion-spec.json" \
+    http://localhost:8888/druid/indexer/v1/supervisor)
+
+echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
+echo ""
+
+# Submit the ingestion spec
+echo "Submitting ingestion specification..."
+RESPONSE=$(curl -s -X POST \
+    -H 'Content-Type: application/json' \
+    -d @"$PROJECT_ROOT/druid/formatted-ingestion-spec.json" \
     http://localhost:8888/druid/indexer/v1/supervisor)
 
 echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
@@ -40,6 +62,11 @@ echo ""
 echo "Checking supervisor status..."
 sleep 3
 curl -s http://localhost:8888/druid/indexer/v1/supervisor/tickets/status | jq '.'
+echo ""
+
+echo "Checking supervisor status..."
+sleep 3
+curl -s http://localhost:8888/druid/indexer/v1/supervisor/formatted/status | jq '.'
 echo ""
 
 echo "========================================="
