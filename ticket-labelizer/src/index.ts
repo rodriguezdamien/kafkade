@@ -34,7 +34,7 @@ interface AIResponse {
   priority: number;
 }
 
-interface LabeledTicket {
+interface LabelizedTicket {
   id: string;
   sender: string;
   message: string;
@@ -168,7 +168,7 @@ async function labelTicket(
   const parsed = extractJSON(content);
   const validated = validateAIResponse(parsed, ticket.id);
 
-  console.log(`[ai] Successfully labelled ticket ${ticket.id}`);
+  console.log(`[ai] Successfully labelized ticket ${ticket.id}`);
   return validated;
 }
 
@@ -294,7 +294,7 @@ class Ticketlabelizer {
     try {
       const aiResult = await labelTicket(this.ollama, ticket);
 
-      const labeled: LabeledTicket = {
+      const labelized: LabelizedTicket = {
         id: ticket.id,
         sender: ticket.sender,
         message: ticket.message,
@@ -308,15 +308,15 @@ class Ticketlabelizer {
         topic: OUTPUT_TOPIC,
         messages: [
           {
-            key: labeled.id,
-            value: JSON.stringify(labeled),
+            key: labelized.id,
+            value: JSON.stringify(labelized),
           },
         ],
       });
 
       console.log(
-        `[send] Labeled ticket ${labeled.id} → ${OUTPUT_TOPIC} ` +
-          `(labels=${labeled.labels.join(',')}, type=${labeled.type}, priority=${labeled.priority})`,
+        `[send] Labelized ticket ${labelized.id} → ${OUTPUT_TOPIC} ` +
+          `(labels=${labelized.labels.join(',')}, type=${labelized.type}, priority=${labelized.priority})`,
       );
     } catch (error) {
       const reason = `Labelling failed: ${error instanceof Error ? error.message : String(error)}`;

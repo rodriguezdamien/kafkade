@@ -14,7 +14,7 @@ type Label = 'Mobile' | 'Web' | 'Back-end' | 'Infra';
 type TicketType = 'bug' | 'feature' | 'question';
 type TicketStatus = 'open' | 'closed';
 
-interface LabeledTicket {
+interface LabelizedTicket {
   id: string;
   sender: string;
   message: string;
@@ -63,7 +63,7 @@ class KPIStore {
   };
   private processedTicketIds = new Set<string>(); // Track processed ticket IDs
 
-  addTicket(ticket: LabeledTicket): boolean {
+  addTicket(ticket: LabelizedTicket): boolean {
     // Check if ticket already processed
     if (this.processedTicketIds.has(ticket.id)) {
       console.log(`[kpi] Ticket ${ticket.id} already processed, skipping`);
@@ -150,7 +150,7 @@ async function main() {
           return;
         }
 
-        const ticket: LabeledTicket = JSON.parse(value);
+        const ticket: LabelizedTicket = JSON.parse(value);
         console.log(`[kpi] Processing ticket ${ticket.id} - Type: ${ticket.type}, Labels: ${ticket.labels.join(', ')}, Priority: ${ticket.priority}`);
         
         const isNew = kpiStore.addTicket(ticket);

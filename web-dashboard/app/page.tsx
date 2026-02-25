@@ -101,7 +101,7 @@ export default function DashboardPage() {
   const getTopicIcon = (topic: string) => {
     if (topic.includes('dlq')) {
       return <AlertCircle className="h-4 w-4 text-red-500" />;
-    } else if (topic.includes('formatted') || topic.includes('labeled')) {
+    } else if (topic.includes('formatted') || topic.includes('labelized')) {
       return <CheckCircle className="h-4 w-4 text-green-500" />;
     }
     return <Clock className="h-4 w-4 text-blue-500" />;

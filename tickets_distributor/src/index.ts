@@ -6,8 +6,8 @@ const KAFKA_INPUT_TOPIC = process.env.KAFKA_INPUT_TOPIC || 'tickets_labelized';
 const KAFKA_OUTPUT_TOPIC_PREFIX = process.env.KAFKA_OUTPUT_TOPIC_PREFIX || 'ticket';
 const KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || 'tickets-distributor-group';
 
-// LabeledTicket format (from ticket-labeller)
-interface LabeledTicket {
+// LabelizedTicket format (from ticket-labeller)
+interface LabelizedTicket {
   id: string;
   sender: string;
   message: string;
@@ -83,8 +83,8 @@ async function processMessage(payload: EachMessagePayload): Promise<void> {
   }
 
   try {
-    // Parse incoming labeled ticket
-    const ticket: LabeledTicket = JSON.parse(message.value.toString());
+    // Parse incoming labelized ticket
+    const ticket: LabelizedTicket = JSON.parse(message.value.toString());
     console.log(`Processing ticket ${ticket.id} from ${ticket.sender}`);
 
     // Generate topic name for this specific ticket

@@ -2,7 +2,7 @@
 
 ## What's This?
 
-The Ticket-Labelizer is a TypeScript service that consumes messages from the **Formatted Tickets** queue in Kafka (using KafkaJS), enriches them with labels, a type, and a priority using a local Ollama model, and then publishes the resulting **Labelled Tickets** to a downstream Kafka queue.
+The Ticket-Labelizer is a TypeScript service that consumes messages from the formatted tickets queue in Kafka (using KafkaJS), enriches them with labels, a type, and a priority using a local Ollama model, and then publishes the resulting labelized tickets to a downstream Kafka queue.
 
 ### Labels, Types, and Priorities
 

@@ -38,7 +38,7 @@ TICKET_IDS=$(docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.
 
 if [ -z "$TICKET_IDS" ]; then
     echo "⚠️  No tickets found in tickets_labelized topic"
-    echo "   The distributor needs labeled tickets to work."
+    echo "   The distributor needs labelized tickets to work."
     echo "   Make sure the mail_simulator, mail_formatter, and ticket_labelizer are running."
     exit 0
 fi
