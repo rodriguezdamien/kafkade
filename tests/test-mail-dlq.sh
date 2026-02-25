@@ -7,10 +7,10 @@ echo "=== Testing Mail Formatter DLQ ==="
 echo ""
 
 # 1. Check if topic exists
-echo "Step 1: Checking if mail_dlq topic exists..."
+echo "Step 1: Checking if mails_dlq topic exists..."
 docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh \
     --bootstrap-server localhost:9092 \
-    --list | grep -q "mail_dlq" && echo "✓ DLQ topic exists" || echo "✗ DLQ topic not found (will be auto-created)"
+    --list | grep -q "mails_dlq" && echo "✓ DLQ topic exists" || echo "✗ DLQ topic not found (will be auto-created)"
 echo ""
 
 # 2. Send an invalid message to trigger DLQ
@@ -33,11 +33,11 @@ docker compose logs --tail 20 mail_formatter | grep -i "error\|dlq" || echo "No 
 echo ""
 
 # 5. Read from DLQ
-echo "Step 5: Reading messages from DLQ (mail_dlq)..."
+echo "Step 5: Reading messages from DLQ (mails_dlq)..."
 echo "Messages in DLQ:"
 docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
     --bootstrap-server localhost:9092 \
-    --topic mail_dlq \
+    --topic mails_dlq \
     --from-beginning \
     --max-messages 10 \
     --timeout-ms 5000 \

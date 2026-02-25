@@ -1,6 +1,6 @@
 # DLQ Retry Service
 
-A service that monitors Dead Letter Queues (mail_dlq, signal_dlq), and retries failed messages by sending them back to their original topics for reprocessing. Notifies via Discord for permanent failures.
+A service that monitors Dead Letter Queues (mails_dlq, signals_dlq), and retries failed messages by sending them back to their original topics for reprocessing. Notifies via Discord for permanent failures.
 
 ## Configuration
 
@@ -25,8 +25,8 @@ To monitor additional DLQ topics, edit `src/index.ts`:
 
 ```typescript
 const DLQ_TOPICS = [
-  'mail_dlq',
-  'signal_dlq',
+  'mails_dlq',
+  'signals_dlq',
   'your_new_dlq',
 ];
 ```
@@ -47,5 +47,3 @@ To run the service:
 ```bash
 docker compose up -d --build dlq_retry_service
 ```
-
-

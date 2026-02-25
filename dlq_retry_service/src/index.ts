@@ -7,8 +7,8 @@ const MAX_RETRY_ATTEMPTS = parseInt(process.env.MAX_RETRY_ATTEMPTS || '3');
 const GROUP_ID = process.env.KAFKA_GROUP_ID || 'dlq-retry-service-group';
 
 const DLQ_TOPICS = [
-  'mail_dlq',
-  'signal_dlq',
+  'mails_dlq',
+  'signals_dlq',
 ];
 
 // Retry delays: immediate (0s), 30s, 2 minutes (120s)

@@ -3,13 +3,13 @@
 
 set -e
 
-echo "=== Consuming from signal_dlq (Dead Letter Queue) ==="
+echo "=== Consuming from signals_dql (Dead Letter Queue) ==="
 echo "Press Ctrl+C to stop"
 echo ""
 
 docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
     --bootstrap-server localhost:9092 \
-    --topic signal_dlq \
+    --topic signals_dql \
     --from-beginning \
     --property print.headers=true \
     --property print.key=true \

@@ -36,11 +36,11 @@ sleep 5
 echo ""
 
 # Step 3: Check DLQ
-echo "Step 3: Verifying messages in mail_dlq..."
+echo "Step 3: Verifying messages in mails_dlq..."
 MSG_COUNT=$(docker compose exec -T kafka /opt/kafka/bin/kafka-run-class.sh \
     kafka.tools.GetOffsetShell \
     --broker-list localhost:9092 \
-    --topic mail_dlq \
+    --topic mails_dlq \
     --time -1 2>/dev/null | awk -F ":" '{sum += $3} END {print sum+0}')
 echo "   Messages in DLQ: $MSG_COUNT"
 echo ""

@@ -30,7 +30,7 @@ class SignalConsumer {
     const kafkaBroker = process.env.KAFKA_BROKER || 'localhost:9092';
     this.inputTopic = process.env.INPUT_KAFKA_TOPIC || 'signals';
     this.outputTopic = process.env.OUTPUT_KAFKA_TOPIC || 'tickets_formatted';
-    this.dlqTopic = process.env.KAFKA_DLQ_TOPIC || 'signal_dlq';
+    this.dlqTopic = process.env.KAFKA_DLQ_TOPIC || 'signals_dql';
 
     this.kafka = new Kafka({
       clientId: 'signal-consumer',

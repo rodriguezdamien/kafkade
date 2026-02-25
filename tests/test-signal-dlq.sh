@@ -7,10 +7,10 @@ echo "=== Testing Signal Consumer DLQ ==="
 echo ""
 
 # 1. Check if topic exists
-echo "Step 1: Checking if signal_dlq topic exists..."
+echo "Step 1: Checking if signals_dql topic exists..."
 docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh \
     --bootstrap-server localhost:9092 \
-    --list | grep -q "signal_dlq" && echo "✓ DLQ topic exists" || echo "✗ DLQ topic not found (will be auto-created)"
+    --list | grep -q "signals_dql" && echo "✓ DLQ topic exists" || echo "✗ DLQ topic not found (will be auto-created)"
 echo ""
 
 # 2. Send an invalid message to trigger DLQ
@@ -33,11 +33,11 @@ docker compose logs --tail 20 signal_consumer | grep -i "error\|dlq" || echo "No
 echo ""
 
 # 5. Read from DLQ
-echo "Step 5: Reading messages from DLQ (signal_dlq)..."
+echo "Step 5: Reading messages from DLQ (signals_dql)..."
 echo "Messages in DLQ:"
 docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
     --bootstrap-server localhost:9092 \
-    --topic signal_dlq \
+    --topic signals_dql \
     --from-beginning \
     --max-messages 10 \
     --timeout-ms 5000 \
