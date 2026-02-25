@@ -41,7 +41,7 @@ Apache Superset (Visualization & Dashboards)
 docker compose up -d
 
 # Wait for services to be healthy (may take 2-3 minutes)
-bash analytics/check-status.sh
+bash scripts/analytics/check-status.sh
 ```
 
 ### 2. Start Data Ingestion
@@ -49,7 +49,7 @@ bash analytics/check-status.sh
 Once Druid is ready, submit the ingestion specification:
 
 ```bash
-bash analytics/start-ingestion.sh
+bash scripts/analytics/start-ingestion.sh
 ```
 
 This creates a Kafka supervisor that:
@@ -63,22 +63,22 @@ Check that data is being ingested:
 
 ```bash
 # Check overall status
-bash analytics/check-status.sh
+bash scripts/analytics/check-status.sh
 
 # Query for summary statistics
-bash analytics/query-tickets.sh summary
+bash scripts/analytics/query-tickets.sh summary
 
 # Query by ticket type
-bash analytics/query-tickets.sh by-type
+bash scripts/analytics/query-tickets.sh by-type
 
 # Query by priority
-bash analytics/query-tickets.sh by-priority
+bash scripts/analytics/query-tickets.sh by-priority
 
 # Query by label
-bash analytics/query-tickets.sh by-label
+bash scripts/analytics/query-tickets.sh by-label
 
 # Query time series data
-bash analytics/query-tickets.sh time-series
+bash scripts/analytics/query-tickets.sh time-series
 ```
 
 ## Available Metrics
@@ -246,35 +246,35 @@ You can manually create a dashboard with these visualizations:
 
 ### Check System Status
 ```bash
-bash analytics/check-status.sh
+bash scripts/analytics/check-status.sh
 ```
 
 ### Start Ingestion
 ```bash
-bash analytics/start-ingestion.sh
+bash scripts/analytics/start-ingestion.sh
 ```
 
 ### Stop Ingestion
 ```bash
-bash analytics/terminate-ingestion.sh
+bash scripts/analytics/terminate-ingestion.sh
 ```
 
 ### Query Data
 ```bash
 # Summary
-bash analytics/query-tickets.sh summary
+bash scripts/analytics/query-tickets.sh summary
 
 # By type
-bash analytics/query-tickets.sh by-type
+bash scripts/analytics/query-tickets.sh by-type
 
 # By priority
-bash analytics/query-tickets.sh by-priority
+bash scripts/analytics/query-tickets.sh by-priority
 
 # By label
-bash analytics/query-tickets.sh by-label
+bash scripts/analytics/query-tickets.sh by-label
 
 # Time series
-bash analytics/query-tickets.sh time-series
+bash scripts/analytics/query-tickets.sh time-series
 ```
 
 ## API Access
@@ -312,7 +312,7 @@ curl -X POST \
 
 ### No Data in Druid
 - Check supervisor status: `curl http://localhost:8888/druid/indexer/v1/supervisor/tickets/status`
-- Verify Kafka topic has messages: `bash tests/consumer-labelized.sh 5`
+- Verify Kafka topic has messages: `bash scripts/tests/consumer-labelized.sh 5`
 - Check ingestion logs: `docker compose logs druid-middlemanager`
 
 ### Superset Connection Issues

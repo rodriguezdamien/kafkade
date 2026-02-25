@@ -43,7 +43,7 @@ if echo "$SUPERVISOR_STATUS" | grep -q "RUNNING"; then
     echo "    • Current lag: $LAG"
 elif echo "$SUPERVISOR_STATUS" | grep -q "Unknown supervisor"; then
     echo "    ⚠️  No supervisor configured"
-    echo "       Run: bash analytics/start-ingestion.sh"
+    echo "       Run: bash scripts/analytics/start-ingestion.sh"
 else
     echo "    ⚠️  Supervisor not running"
 fi
@@ -63,7 +63,7 @@ if echo "$SUPERVISOR_FORMATTED" | grep -q "RUNNING"; then
     echo "    • Current lag: $LAG"
 elif echo "$SUPERVISOR_FORMATTED" | grep -q "Unknown supervisor"; then
     echo "    ⚠️  No supervisor configured"
-    echo "       Run: bash analytics/start-ingestion-formatted.sh"
+    echo "       Run: bash scripts/analytics/start-ingestion-formatted.sh"
 else
     echo "    ⚠️  Supervisor not running"
 fi
@@ -124,7 +124,7 @@ echo "Superset:        http://localhost:8088"
 echo "                 (admin/admin)"
 echo ""
 echo "Useful commands:"
-echo "  Start ingestion:   bash analytics/start-ingestion.sh"
-echo "  Query data:        bash analytics/query-tickets.sh summary"
-echo "  Stop ingestion:    bash analytics/terminate-ingestion.sh"
+echo "  Start ingestion:   bash scripts/analytics/start-ingestion.sh"
+echo "  Query data:        bash scripts/analytics/query-tickets.sh summary"
+echo "  Stop ingestion:    bash scripts/analytics/terminate-ingestion.sh"
 echo ""
