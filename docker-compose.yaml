@@ -131,7 +131,7 @@ services:
     networks:
       - kafka-network
 
- dlq_retry_service:
+  dlq_retry_service:
     build:
       context: ./dlq_retry_service
       dockerfile: Dockerfile
