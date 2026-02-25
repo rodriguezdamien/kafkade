@@ -27,20 +27,20 @@ echo "✓ Invalid message sent to mails topic"
 echo ""
 
 # 3. Wait for it to appear in DLQ
-echo "Step 3: Waiting 5 seconds for message to reach mail_dlq..."
+echo "Step 3: Waiting 5 seconds for message to reach mails_dlq..."
 sleep 5
 echo ""
 
-# 4. Check mail_dlq
-echo "Step 4: Checking mail_dlq..."
+# 4. Check mails_dlq
+echo "Step 4: Checking mails_dlq..."
 docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
     --bootstrap-server localhost:9092 \
-    --topic mail_dlq \
+    --topic mails_dlq \
     --from-beginning \
     --max-messages 1 \
     --timeout-ms 3000 \
     --property print.headers=true \
-    2>/dev/null | head -5 || echo "No messages in mail_dlq yet"
+    2>/dev/null | head -5 || echo "No messages in mails_dlq yet"
 echo ""
 
 # 5. Check dlq_retry_service logs

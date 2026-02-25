@@ -5,7 +5,7 @@ set -e
 
 KAFKA_BROKER="localhost:9092"
 TEST_TOPIC="mails"
-DLQ_TOPIC="mail_dlq"
+DLQ_TOPIC="mails_dlq"
 
 echo "========================================"
 echo "  DLQ Retry Service - Full Flow Test"
@@ -57,9 +57,9 @@ echo ""
 # Step 2: Check baseline
 echo "Step 2: Recording baseline message counts..."
 INITIAL_MAILS=$(count_messages "mails")
-INITIAL_DLQ=$(count_messages "mail_dlq")
+INITIAL_DLQ=$(count_messages "mails_dlq")
 echo "   mails topic: $INITIAL_MAILS messages"
-echo "   mail_dlq topic: $INITIAL_DLQ messages"
+echo "   mails_dlq topic: $INITIAL_DLQ messages"
 echo ""
 
 # Step 3: Send invalid message that will fail processing
@@ -74,7 +74,7 @@ echo ""
 # Step 4: Wait for message to be processed and sent to DLQ
 echo "Step 4: Waiting for message to be processed and sent to DLQ (5s)..."
 sleep 5
-NEW_DLQ=$(count_messages "mail_dlq")
+NEW_DLQ=$(count_messages "mails_dlq")
 if [ "$NEW_DLQ" -gt "$INITIAL_DLQ" ]; then
     echo "✓ Message appeared in DLQ ($NEW_DLQ total messages)"
 else
@@ -147,7 +147,7 @@ echo ""
 echo "Check DLQ messages with:"
 echo "   docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \\"
 echo "       --bootstrap-server $KAFKA_BROKER \\"
-echo "       --topic mail_dlq \\"
+echo "       --topic mails_dlq \\"
 echo "       --from-beginning \\"
 echo "       --property print.headers=true"
 echo ""

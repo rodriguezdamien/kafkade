@@ -4,7 +4,7 @@ import { Kafka, Consumer, Producer, EachMessagePayload } from 'kafkajs';
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 const KAFKA_INPUT_TOPIC = process.env.KAFKA_INPUT_TOPIC || 'mails';
 const KAFKA_OUTPUT_TOPIC = process.env.KAFKA_OUTPUT_TOPIC || 'tickets_formatted';
-const KAFKA_DLQ_TOPIC = process.env.KAFKA_DLQ_TOPIC || 'mail_dlq';
+const KAFKA_DLQ_TOPIC = process.env.KAFKA_DLQ_TOPIC || 'mails_dlq';
 const KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || 'mail-formatter-group';
 
 // Input format (EmailMessage from mail_simulator)

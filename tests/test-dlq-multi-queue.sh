@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test both mail_dlq and signal_dlq retry functionality
+# Test both mails_dlq and signals_dlq retry functionality
 
 set -e
 
@@ -41,10 +41,10 @@ echo ""
 
 # Step 2: Record baseline
 echo "Step 2: Recording baseline message counts..."
-MAIL_DLQ_INITIAL=$(count_dlq_messages "mail_dlq")
-SIGNAL_DLQ_INITIAL=$(count_dlq_messages "signal_dlq")
-echo "   mail_dlq: $MAIL_DLQ_INITIAL messages"
-echo "   signal_dlq: $SIGNAL_DLQ_INITIAL messages"
+MAILS_DLQ_INITIAL=$(count_dlq_messages "mails_dlq")
+SIGNALS_DLQ_INITIAL=$(count_dlq_messages "signals_dlq")
+echo "   mails_dlq: $MAILS_DLQ_INITIAL messages"
+echo "   signals_dlq: $SIGNALS_DLQ_INITIAL messages"
 echo ""
 
 # Step 3: Send failing messages to both topics
@@ -74,21 +74,21 @@ echo ""
 
 # Step 5: Verify both DLQs received messages
 echo "Step 5: Verifying DLQ population..."
-MAIL_DLQ_AFTER=$(count_dlq_messages "mail_dlq")
-SIGNAL_DLQ_AFTER=$(count_dlq_messages "signal_dlq")
+MAILS_DLQ_AFTER=$(count_dlq_messages "mails_dlq")
+SIGNALS_DLQ_AFTER=$(count_dlq_messages "signals_dlq")
 
-echo "   mail_dlq:"
-if [ "$MAIL_DLQ_AFTER" -gt "$MAIL_DLQ_INITIAL" ]; then
-    echo "      ✓ Received new message(s) ($MAIL_DLQ_INITIAL → $MAIL_DLQ_AFTER)"
+echo "   mails_dlq:"
+if [ "$MAILS_DLQ_AFTER" -gt "$MAILS_DLQ_INITIAL" ]; then
+    echo "      ✓ Received new message(s) ($MAILS_DLQ_INITIAL → $MAILS_DLQ_AFTER)"
 else
-    echo "      ✗ No new messages ($MAIL_DLQ_AFTER)"
+    echo "      ✗ No new messages ($MAILS_DLQ_AFTER)"
 fi
 
-echo "   signal_dlq:"
-if [ "$SIGNAL_DLQ_AFTER" -gt "$SIGNAL_DLQ_INITIAL" ]; then
-    echo "      ✓ Received new message(s) ($SIGNAL_DLQ_INITIAL → $SIGNAL_DLQ_AFTER)"
+echo "   signals_dql:"
+if [ "$SIGNALS_DLQ_AFTER" -gt "$SIGNALS_DLQ_INITIAL" ]; then
+    echo "      ✓ Received new message(s) ($SIGNALS_DLQ_INITIAL → $SIGNALS_DLQ_AFTER)"
 else
-    echo "      ✗ No new messages ($SIGNAL_DLQ_AFTER)"
+    echo "      ✗ No new messages ($SIGNALS_DLQ_AFTER)"
 fi
 echo ""
 
@@ -96,10 +96,10 @@ echo ""
 echo "Step 6: Checking DLQ retry service logs for both queues..."
 echo ""
 echo "   Mail DLQ processing:"
-docker compose logs --tail 50 dlq_retry_service | grep -A 5 "mail_dlq" || echo "      No mail_dlq activity yet"
+docker compose logs --tail 50 dlq_retry_service | grep -A 5 "mails_dlq" || echo "      No mails_dlq activity yet"
 echo ""
 echo "   Signal DLQ processing:"
-docker compose logs --tail 50 dlq_retry_service | grep -A 5 "signal_dlq" || echo "      No signal_dlq activity yet"
+docker compose logs --tail 50 dlq_retry_service | grep -A 5 "signals_dlq" || echo "      No signals_dql activity yet"
 echo ""
 
 # Step 7: Monitor retry attempts
@@ -119,8 +119,8 @@ echo "  Test Summary"
 echo "========================================="
 echo ""
 echo "DLQ Message Counts:"
-echo "   mail_dlq:   $MAIL_DLQ_INITIAL → $MAIL_DLQ_AFTER"
-echo "   signal_dlq: $SIGNAL_DLQ_INITIAL → $SIGNAL_DLQ_AFTER"
+echo "   mails_dlq:   $MAILS_DLQ_INITIAL → $MAILS_DLQ_AFTER"
+echo "   signals_dlq: $SIGNALS_DLQ_INITIAL → $SIGNALS_DLQ_AFTER"
 echo ""
 echo "The DLQ retry service monitors both queues and will:"
 echo "   1. Retry failed mail messages → send back to 'mails' topic"
@@ -133,7 +133,7 @@ echo ""
 echo "To check specific DLQ:"
 echo "   docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \\"
 echo "       --bootstrap-server localhost:9092 \\"
-echo "       --topic mail_dlq \\"  # or signal_dlq
+echo "       --topic mails_dlq \\"  # or signals_dlq
 echo "       --from-beginning \\"
 echo "       --property print.headers=true"
 echo ""

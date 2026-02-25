@@ -71,7 +71,7 @@ services:
       KAFKA_BROKER: kafka:9092
       KAFKA_INPUT_TOPIC: mails
       KAFKA_OUTPUT_TOPIC: tickets_formatted
-      KAFKA_DLQ_TOPIC: mail_dlq
+      KAFKA_DLQ_TOPIC: mails_dlq
       KAFKA_GROUP_ID: mail-formatter-group
     networks:
       - kafka-network
@@ -88,7 +88,7 @@ services:
       KAFKA_BROKER: kafka:9092
       INPUT_KAFKA_TOPIC: signals
       OUTPUT_KAFKA_TOPIC: tickets_formatted
-      KAFKA_DLQ_TOPIC: signal_dlq
+      KAFKA_DLQ_TOPIC: signals_dlq
     networks:
       - kafka-network
 
