@@ -17,9 +17,9 @@ interface KPIData {
 
 export async function GET() {
   try {
-    // Fetch all KPI messages from the tickets_kpi topic from the beginning
-    // We need to get all messages to find the latest one
-    const messages = await fetchMessagesFromTopic('tickets_kpi', 1000, false);
+    // Fetch only the latest KPI message from the end of the topic
+    // This is much faster than reading all messages
+    const messages = await fetchMessagesFromTopic('tickets_kpi', 1, true);
     
     if (messages.length === 0) {
       // Return empty KPI if no data yet
@@ -36,14 +36,8 @@ export async function GET() {
       });
     }
 
-    // Get the message with the highest timestamp (most recent)
-    const latestMessage = messages.reduce((latest, current) => {
-      const currentKpi: KPIData = JSON.parse(current.value);
-      const latestKpi: KPIData = JSON.parse(latest.value);
-      return currentKpi.timestamp > latestKpi.timestamp ? current : latest;
-    });
-    
-    const kpi: KPIData = JSON.parse(latestMessage.value);
+    // Get the first (and only) message which is the most recent
+    const kpi: KPIData = JSON.parse(messages[0].value);
     
     return NextResponse.json({ kpi });
   } catch (error) {

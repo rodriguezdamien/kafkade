@@ -31,8 +31,16 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<KafkaMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [kpi, setKpi] = useState<KPIData | null>(null);
-  const [kpiLoading, setKpiLoading] = useState(false);
+  const [kpi, setKpi] = useState<KPIData>({
+    totalTickets: 0,
+    byType: { bug: 0, feature: 0, question: 0 },
+    byLabel: { Mobile: 0, Web: 0, 'Back-end': 0, Infra: 0 },
+    byPriority: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    byStatus: { open: 0, closed: 0 },
+    lastUpdate: new Date().toISOString(),
+    timestamp: Date.now(),
+  });
+  const [kpiLoading, setKpiLoading] = useState(true);
 
   useEffect(() => {
     fetchTopics();
@@ -123,58 +131,57 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI Section */}
-        {kpi && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Ticket KPI</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className={`h-3 w-3 ${kpiLoading ? 'animate-spin' : ''}`} />
-                {kpi.lastUpdate ? `Mis à jour: ${new Date(kpi.lastUpdate).toLocaleTimeString()}` : ''}
-              </div>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">Ticket KPI</h2>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw className={`h-3 w-3 ${kpiLoading ? 'animate-spin' : ''}`} />
+              {kpi.lastUpdate ? `Mis à jour: ${new Date(kpi.lastUpdate).toLocaleTimeString()}` : ''}
             </div>
+          </div>
 
-            {/* Total Tickets */}
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <TrendingUp className="h-5 w-5" />
-                  Total des Tickets Ouverts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-4xl font-bold">{kpi.byStatus?.open || 0}</div>
-                <p className="text-blue-100 text-sm mt-1">tickets ouverts</p>
-              </CardContent>
-            </Card>
+          {/* Total Tickets */}
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <TrendingUp className="h-5 w-5" />
+                Total des Tickets Ouverts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold">{kpi.byStatus?.open || 0}</div>
+              <p className="text-blue-100 text-sm mt-1">tickets ouverts</p>
+            </CardContent>
+          </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* By Status */}
-              {kpi.byStatus && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Par Statut</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">Ouverts</span>
-                      </div>
-                      <span className="font-semibold">{kpi.byStatus.open || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">Fermés</span>
-                      </div>
-                      <span className="font-semibold">{kpi.byStatus.closed || 0}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* By Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* By Status */}
+            {kpi.byStatus && (
               <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Par Statut</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">Ouverts</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byStatus.open || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm">Fermés</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byStatus.closed || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* By Type */}
+            <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Par Type</CardTitle>
                 </CardHeader>
@@ -266,7 +273,6 @@ export default function DashboardPage() {
               </Card>
             </div>
           </div>
-        )}
 
         {/* Topics Navigation */}
         <Card>

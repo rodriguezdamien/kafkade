@@ -1,11 +1,10 @@
-import { Kafka, Consumer, Producer, EachMessagePayload } from 'kafkajs';
+import { Kafka, Consumer, Producer } from 'kafkajs';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
 const INPUT_TOPIC = process.env.KAFKA_INPUT_TOPIC || 'tickets_labelized';
 const OUTPUT_TOPIC = process.env.KAFKA_OUTPUT_TOPIC || 'tickets_kpi';
-const CONSUMER_GROUP = process.env.KAFKA_GROUP_ID || 'kpi-aggregator-group';
 const PUBLISH_INTERVAL_MS = Number(process.env.PUBLISH_INTERVAL_MS) || 5000; // 5 secondes
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,73 +35,119 @@ interface KPIData {
   timestamp: number;
 }
 
-// ─── KPI Store ────────────────────────────────────────────────────────────────
+// ─── KPI Calculator ───────────────────────────────────────────────────────────
 
-class KPIStore {
-  private totalTickets = 0;
-  private byType: Record<TicketType, number> = {
-    bug: 0,
-    feature: 0,
-    question: 0,
+function calculateKPIFromTickets(tickets: LabelizedTicket[]): KPIData {
+  const kpi: KPIData = {
+    totalTickets: 0,
+    byType: { bug: 0, feature: 0, question: 0 },
+    byLabel: { Mobile: 0, Web: 0, 'Back-end': 0, Infra: 0 },
+    byPriority: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    byStatus: { open: 0, closed: 0 },
+    lastUpdate: new Date().toISOString(),
+    timestamp: Date.now(),
   };
-  private byLabel: Record<Label, number> = {
-    Mobile: 0,
-    Web: 0,
-    'Back-end': 0,
-    Infra: 0,
-  };
-  private byPriority: Record<number, number> = {
-    0: 0,
-    1: 0,
-    2: 0,
-    3: 0,
-  };
-  private byStatus: Record<TicketStatus, number> = {
-    open: 0,
-    closed: 0,
-  };
-  private processedTicketIds = new Set<string>(); // Track processed ticket IDs
 
-  addTicket(ticket: LabelizedTicket): boolean {
-    // Check if ticket already processed
-    if (this.processedTicketIds.has(ticket.id)) {
-      console.log(`[kpi] Ticket ${ticket.id} already processed, skipping`);
-      return false;
+  // Use a Set to track unique ticket IDs and avoid duplicates
+  const uniqueTicketIds = new Set<string>();
+
+  for (const ticket of tickets) {
+    // Skip duplicates
+    if (uniqueTicketIds.has(ticket.id)) {
+      continue;
     }
-    
-    // Mark as processed
-    this.processedTicketIds.add(ticket.id);
-    
-    this.totalTickets++;
+    uniqueTicketIds.add(ticket.id);
+
+    kpi.totalTickets++;
     
     // Count by type
-    this.byType[ticket.type]++;
+    kpi.byType[ticket.type]++;
     
     // Count by labels (a ticket can have multiple labels)
     for (const label of ticket.labels) {
-      this.byLabel[label]++;
+      kpi.byLabel[label]++;
     }
     
     // Count by priority
-    this.byPriority[ticket.priority]++;
+    kpi.byPriority[ticket.priority]++;
     
     // Count by status (default to 'open' if not specified)
     const status = ticket.status || 'open';
-    this.byStatus[status]++;
-    
-    return true;
+    kpi.byStatus[status]++;
   }
 
-  getKPI(): KPIData {
-    return {
-      totalTickets: this.totalTickets,
-      byType: { ...this.byType },
-      byLabel: { ...this.byLabel },
-      byPriority: { ...this.byPriority },
-      byStatus: { ...this.byStatus },
-      lastUpdate: new Date().toISOString(),
-      timestamp: Date.now(),
-    };
+  return kpi;
+}
+
+// ─── Fetch All Tickets ────────────────────────────────────────────────────────
+
+async function fetchAllTickets(kafka: Kafka, topic: string): Promise<LabelizedTicket[]> {
+  const consumer: Consumer = kafka.consumer({ 
+    groupId: `kpi-reader-${Date.now()}` // Unique group ID each time
+  });
+  
+  const tickets: LabelizedTicket[] = [];
+  let isRunning = true;
+
+  try {
+    await consumer.connect();
+    await consumer.subscribe({ topic, fromBeginning: true });
+
+    const messagePromise = new Promise<void>((resolve) => {
+      let lastMessageTime = Date.now();
+      let consumerRunning = false;
+      
+      consumer.run({
+        eachMessage: async ({ message }) => {
+          consumerRunning = true;
+          lastMessageTime = Date.now();
+          
+          try {
+            const value = message.value?.toString();
+            if (value) {
+              const ticket: LabelizedTicket = JSON.parse(value);
+              tickets.push(ticket);
+            }
+          } catch (error) {
+            console.error('[error] Failed to parse ticket:', error);
+          }
+        },
+      }).catch(err => {
+        console.error('[error] Consumer run error:', err);
+        resolve();
+      });
+      
+      // Check if we should stop
+      const checkInterval = setInterval(() => {
+        const idleTime = 2000; // Wait 2s after last message (reduced from 3s)
+        if (!isRunning || (consumerRunning && Date.now() - lastMessageTime > idleTime)) {
+          clearInterval(checkInterval);
+          isRunning = false;
+          resolve();
+        }
+      }, 500);
+      
+      // Maximum timeout
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        isRunning = false;
+        resolve();
+      }, 20000); // 20s max (reduced from 30s)
+    });
+
+    await messagePromise;
+    await consumer.stop();
+    await consumer.disconnect();
+    
+    console.log(`[kpi] Fetched ${tickets.length} tickets from ${topic}`);
+    return tickets;
+  } catch (error) {
+    console.error('[error] Failed to fetch tickets:', error);
+    try {
+      await consumer.stop();
+      await consumer.disconnect();
+    } catch (e) {}
+    return [];
   }
 }
 
@@ -125,55 +170,28 @@ async function main() {
     },
   });
 
-  const consumer: Consumer = kafka.consumer({ groupId: CONSUMER_GROUP });
   const producer: Producer = kafka.producer();
-
-  const kpiStore = new KPIStore();
-  let hasData = false;
-
-  // Connect to Kafka
-  await consumer.connect();
   await producer.connect();
-  console.log('[kafka] Connected to Kafka');
+  console.log('[kafka] Producer connected to Kafka');
 
-  // Subscribe to input topic - read from beginning to get all historical data
-  await consumer.subscribe({ topic: INPUT_TOPIC, fromBeginning: true });
-  console.log(`[kafka] Subscribed to topic: ${INPUT_TOPIC} (from beginning)`);
+  let isShuttingDown = false;
 
-  // Process messages
-  await consumer.run({
-    eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
-      try {
-        const value = message.value?.toString();
-        if (!value) {
-          console.warn('[warn] Empty message received');
-          return;
-        }
-
-        const ticket: LabelizedTicket = JSON.parse(value);
-        console.log(`[kpi] Processing ticket ${ticket.id} - Type: ${ticket.type}, Labels: ${ticket.labels.join(', ')}, Priority: ${ticket.priority}`);
-        
-        const isNew = kpiStore.addTicket(ticket);
-        if (isNew) {
-          hasData = true;
-          console.log(`[kpi] ✓ Ticket ${ticket.id} added to KPI (Total: ${kpiStore.getKPI().totalTickets})`);
-        }
-
-      } catch (error) {
-        console.error('[error] Failed to process message:', error);
-      }
-    },
-  });
-
-  // Periodic KPI publishing
-  setInterval(async () => {
-    if (!hasData) {
-      console.log('[kpi] No data to publish yet, skipping...');
-      return;
-    }
+  // Periodic KPI calculation and publishing
+  const updateKPI = async () => {
+    if (isShuttingDown) return;
 
     try {
-      const kpi = kpiStore.getKPI();
+      console.log('[kpi] Fetching all tickets from queue...');
+      const tickets = await fetchAllTickets(kafka, INPUT_TOPIC);
+      
+      if (tickets.length === 0) {
+        console.log('[kpi] No tickets found yet, skipping...');
+        return;
+      }
+
+      console.log(`[kpi] Calculating KPI from ${tickets.length} tickets...`);
+      const kpi = calculateKPIFromTickets(tickets);
+      
       console.log('[kpi] Publishing KPI:', JSON.stringify(kpi, null, 2));
 
       await producer.send({
@@ -188,15 +206,24 @@ async function main() {
       });
 
       console.log('[kpi] ✓ KPI published successfully');
+      console.log(`[kpi] Stats: ${kpi.totalTickets} total, ${kpi.byStatus.open} open, ${kpi.byStatus.closed} closed`);
     } catch (error) {
-      console.error('[error] Failed to publish KPI:', error);
+      console.error('[error] Failed to update KPI:', error);
     }
-  }, PUBLISH_INTERVAL_MS);
+  };
+
+  // Initial update
+  console.log('[kpi] Running initial KPI calculation...');
+  await updateKPI();
+
+  // Schedule periodic updates
+  const interval = setInterval(updateKPI, PUBLISH_INTERVAL_MS);
 
   // Graceful shutdown
   const shutdown = async () => {
     console.log('[shutdown] Shutting down gracefully...');
-    await consumer.disconnect();
+    isShuttingDown = true;
+    clearInterval(interval);
     await producer.disconnect();
     process.exit(0);
   };

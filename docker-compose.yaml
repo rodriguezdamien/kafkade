@@ -135,6 +135,22 @@ services:
     networks:
       - kafka-network
 
+  kpi_aggregator:
+    build:
+      context: ./services/kpi-aggregator
+      dockerfile: Dockerfile
+    container_name: kpi_aggregator
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_INPUT_TOPIC: tickets_labelized
+      KAFKA_OUTPUT_TOPIC: tickets_kpi
+      PUBLISH_INTERVAL_MS: 5000
+    networks:
+      - kafka-network
+
   dlq_retry_service:
     build:
       context: ./services/dlq_retry_service

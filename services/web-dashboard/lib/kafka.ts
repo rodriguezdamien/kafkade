@@ -72,7 +72,7 @@ export async function fetchMessagesFromTopic(
       
       // Check if we should stop
       checkInterval = setInterval(() => {
-        const idleTime = fromEnd ? 3000 : 5000; // Give more time for beginning reads
+        const idleTime = fromEnd ? 2000 : 5000; // Reduced idle time for end reads: 2s vs 5s
         if (!isRunning || messages.length >= limit || (consumerRunning && Date.now() - lastMessageTime > idleTime)) {
           clearInterval(checkInterval);
           isRunning = false;
@@ -80,12 +80,12 @@ export async function fetchMessagesFromTopic(
         }
       }, 500);
       
-      // Maximum timeout - increased to let consumer join group
+      // Maximum timeout - reduced for end reads
       setTimeout(() => {
         if (checkInterval) clearInterval(checkInterval);
         isRunning = false;
         resolve();
-      }, 35000); // Increased to 35s to allow group join + consumption
+      }, fromEnd ? 15000 : 35000); // 15s for end reads, 35s for beginning reads
     });
 
     await messagePromise;
