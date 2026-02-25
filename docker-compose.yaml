@@ -125,6 +125,10 @@ services:
         condition: service_healthy
     environment:
       KAFKA_BROKER: kafka:9092
+      KAFKA_INPUT_TOPIC: tickets_formatted
+      KAFKA_OUTPUT_TOPIC: tickets_labelized
+      KAFKA_DLQ_TOPIC: ticket_labelizer_dlq
+      KAFKA_GROUP_ID: ticket-labelizer-group
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral}
       MESSAGE_INTERVAL_MS: 10000
