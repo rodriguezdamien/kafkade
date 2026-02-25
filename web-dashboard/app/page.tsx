@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, TrendingUp, Bug, Lightbulb, HelpCircle, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -15,16 +15,45 @@ interface KafkaMessage {
   headers: Record<string, string>;
 }
 
+interface KPIData {
+  totalTickets: number;
+  byType: Record<string, number>;
+  byLabel: Record<string, number>;
+  byPriority: Record<number, number>;
+  byStatus?: Record<string, number>;
+  lastUpdate: string;
+  timestamp: number;
+}
+
 export default function DashboardPage() {
   const [topics, setTopics] = useState<string[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [messages, setMessages] = useState<KafkaMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [kpi, setKpi] = useState<KPIData | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(false);
 
   useEffect(() => {
     fetchTopics();
+    fetchKPI();
+    // Refresh KPI every 5 seconds
+    const interval = setInterval(fetchKPI, 5000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchKPI = async () => {
+    setKpiLoading(true);
+    try {
+      const res = await fetch('/api/kpi');
+      const data = await res.json();
+      setKpi(data.kpi);
+    } catch (err) {
+      console.error('Error fetching KPI:', err);
+    } finally {
+      setKpiLoading(false);
+    }
+  };
 
   const fetchTopics = async () => {
     try {
@@ -92,6 +121,152 @@ export default function DashboardPage() {
             Refresh
           </Button>
         </div>
+
+        {/* KPI Section */}
+        {kpi && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">Ticket KPI</h2>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className={`h-3 w-3 ${kpiLoading ? 'animate-spin' : ''}`} />
+                {kpi.lastUpdate ? `Mis à jour: ${new Date(kpi.lastUpdate).toLocaleTimeString()}` : ''}
+              </div>
+            </div>
+
+            {/* Total Tickets */}
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <TrendingUp className="h-5 w-5" />
+                  Total des Tickets Ouverts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold">{kpi.byStatus?.open || 0}</div>
+                <p className="text-blue-100 text-sm mt-1">tickets ouverts</p>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* By Status */}
+              {kpi.byStatus && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Par Statut</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Ouverts</span>
+                      </div>
+                      <span className="font-semibold">{kpi.byStatus.open || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">Fermés</span>
+                      </div>
+                      <span className="font-semibold">{kpi.byStatus.closed || 0}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* By Type */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Par Type</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bug className="h-4 w-4 text-red-500" />
+                      <span className="text-sm">Bugs</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byType.bug || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm">Features</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byType.feature || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm">Questions</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byType.question || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* By Priority */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Par Priorité</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-red-600" />
+                      <span className="text-sm">Critique (0)</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byPriority[0] || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm">Haute (1)</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byPriority[1] || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm">Moyenne (2)</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byPriority[2] || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">Basse (3)</span>
+                    </div>
+                    <span className="font-semibold">{kpi.byPriority[3] || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* By Label */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Par Label</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">📱 Mobile</span>
+                    <span className="font-semibold">{kpi.byLabel.Mobile || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">🌐 Web</span>
+                    <span className="font-semibold">{kpi.byLabel.Web || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">⚙️ Back-end</span>
+                    <span className="font-semibold">{kpi.byLabel['Back-end'] || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">🏗️ Infra</span>
+                    <span className="font-semibold">{kpi.byLabel.Infra || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Topics Navigation */}
         <Card>
