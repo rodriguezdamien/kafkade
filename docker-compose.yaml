@@ -30,7 +30,7 @@ services:
 
   signal_simulator:
     build:
-      context: ./signal_simulator
+      context: ./services/signal_simulator
       dockerfile: Dockerfile
     container_name: signal_simulator
     depends_on:
@@ -45,7 +45,7 @@ services:
 
   mail_simulator:
     build:
-      context: ./mail_simulator
+      context: ./services/mail_simulator
       dockerfile: Dockerfile
     container_name: mail_simulator
     depends_on:
@@ -61,7 +61,7 @@ services:
 
   mail_formatter:
     build:
-      context: ./mail_formatter
+      context: ./services/mail_formatter
       dockerfile: Dockerfile
     container_name: mail_formatter
     depends_on:
@@ -78,7 +78,7 @@ services:
 
   signal_consumer:
     build:
-      context: ./signal_consumer
+      context: ./services/signal_consumer
       dockerfile: Dockerfile
     container_name: signal_consumer
     depends_on:
@@ -115,7 +115,7 @@ services:
  
   ticket_labelizer:
     build:
-      context: ./ticket-labelizer
+      context: ./services/ticket-labelizer
       dockerfile: Dockerfile
     container_name: ticket_labelizer
     depends_on:
@@ -137,7 +137,7 @@ services:
 
   dlq_retry_service:
     build:
-      context: ./dlq_retry_service
+      context: ./services/dlq_retry_service
       dockerfile: Dockerfile
     container_name: dlq_retry_service
     depends_on:
@@ -153,7 +153,7 @@ services:
 
   tickets_distributor:
     build:
-      context: ./tickets_distributor
+      context: ./services/tickets_distributor
       dockerfile: Dockerfile
     container_name: tickets_distributor
     depends_on:
@@ -169,7 +169,7 @@ services:
 
   web_dashboard:
     build:
-      context: ./web-dashboard
+      context: ./services/web-dashboard
       dockerfile: Dockerfile
     container_name: web_dashboard
     depends_on:

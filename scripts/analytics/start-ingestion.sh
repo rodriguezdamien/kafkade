@@ -26,14 +26,14 @@ EXISTING=$(curl -s http://localhost:8888/druid/indexer/v1/supervisor)
 if echo "$EXISTING" | grep -q "tickets"; then
     echo "⚠️  Supervisor 'tickets' already exists"
     echo "   To update, first terminate the existing supervisor:"
-    echo "   bash analytics/terminate-ingestion.sh"
+    echo "   bash scripts/analytics/terminate-ingestion.sh"
     exit 0
 fi
 
 if echo "$EXISTING" | grep -q "formatted"; then
     echo "⚠️  Supervisor 'formatted' already exists"
     echo "   To update, first terminate the existing supervisor:"
-    echo "   bash analytics/terminate-ingestion.sh"
+    echo "   bash scripts/analytics/terminate-ingestion.sh"
     exit 0
 fi
 

@@ -21,7 +21,7 @@ docker compose up -d
 
 ```bash
 # Check status
-bash analytics/check-status.sh
+bash scripts/analytics/check-status.sh
 ```
 
 Wait until you see all services healthy.
@@ -30,7 +30,7 @@ Wait until you see all services healthy.
 
 ```bash
 # Submit the ingestion specification to Druid
-bash analytics/start-ingestion.sh
+bash scripts/analytics/start-ingestion.sh
 ```
 
 This creates a Kafka supervisor that continuously ingests tickets from `tickets_labelized` topic.
@@ -39,13 +39,13 @@ This creates a Kafka supervisor that continuously ingests tickets from `tickets_
 
 ```bash
 # Get summary statistics
-bash analytics/query-tickets.sh summary
+bash scripts/analytics/query-tickets.sh summary
 
 # See tickets by type
-bash analytics/query-tickets.sh by-type
+bash scripts/analytics/query-tickets.sh by-type
 
 # See tickets by priority
-bash analytics/query-tickets.sh by-priority
+bash scripts/analytics/query-tickets.sh by-priority
 ```
 
 ## Step 5: Access UIs
@@ -116,19 +116,19 @@ ORDER BY hour DESC
 
 ```bash
 # Check status of all services
-bash analytics/check-status.sh
+bash scripts/analytics/check-status.sh
 
 # Query tickets (various dimensions)
-bash analytics/query-tickets.sh [summary|by-type|by-priority|by-label|time-series]
+bash scripts/analytics/query-tickets.sh [summary|by-type|by-priority|by-label|time-series]
 
 # Stop ingestion (when needed)
-bash analytics/terminate-ingestion.sh
+bash scripts/analytics/terminate-ingestion.sh
 
 # Restart ingestion
-bash analytics/start-ingestion.sh
+bash scripts/analytics/start-ingestion.sh
 
 # Check what's in Kafka
-bash tests/consumer-labelized.sh 5
+bash scripts/tests/consumer-labelized.sh 5
 ```
 
 ## Metrics Available

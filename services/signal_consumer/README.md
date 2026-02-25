@@ -57,13 +57,13 @@ docker compose up
 ### Testing
 ```bash
 # Test consumer transformation
-./tests/test-consumer.sh
+./scripts/tests/test-consumer.sh
 
 # Verify message transformation
-./tests/verify-transformation.sh
+./scripts/tests/verify-transformation.sh
 
 # Consume formatted messages
-./tests/consumer-formatted.sh [max_messages]
+./scripts/tests/consumer-formatted.sh [max_messages]
 ```
 
 ## Architecture Decisions
