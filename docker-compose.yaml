@@ -147,6 +147,22 @@ services:
     networks:
       - kafka-network
 
+  tickets_distributor:
+    build:
+      context: ./tickets_distributor
+      dockerfile: Dockerfile
+    container_name: tickets_distributor
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_INPUT_TOPIC: tickets_labelized
+      KAFKA_OUTPUT_TOPIC_PREFIX: ticket
+      KAFKA_GROUP_ID: tickets-distributor-group
+    networks:
+      - kafka-network
+
   web_dashboard:
     build:
       context: ./web-dashboard
