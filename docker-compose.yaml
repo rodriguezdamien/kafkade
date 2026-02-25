@@ -178,10 +178,212 @@ services:
     networks:
       - kafka-network
 
+  # Apache Druid Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: druid_postgres
+    environment:
+      POSTGRES_PASSWORD: druid
+      POSTGRES_USER: druid
+      POSTGRES_DB: druid
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kafka-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U druid"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: zookeeper:3.9
+    container_name: druid_zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+    volumes:
+      - zookeeper_data:/data
+    networks:
+      - kafka-network
+
+  druid-coordinator:
+    image: apache/druid:36.0.0
+    container_name: druid_coordinator
+    depends_on:
+      postgres:
+        condition: service_healthy
+      zookeeper:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    environment:
+      - druid_extensions_loadList=["druid-kafka-indexing-service","druid-datasketches","postgresql-metadata-storage"]
+      - druid_metadata_storage_type=postgresql
+      - druid_metadata_storage_connector_connectURI=jdbc:postgresql://postgres:5432/druid
+      - druid_metadata_storage_connector_user=druid
+      - druid_metadata_storage_connector_password=druid
+      - druid_zk_service_host=zookeeper
+      - druid_coordinator_startDelay=PT10S
+      - druid_coordinator_period=PT5S
+    command:
+      - coordinator
+    volumes:
+      - druid_coordinator_var:/opt/druid/var
+    networks:
+      - kafka-network
+
+  druid-broker:
+    image: apache/druid:36.0.0
+    container_name: druid_broker
+    depends_on:
+      - druid-coordinator
+    ports:
+      - "8082:8082"
+    environment:
+      - druid_extensions_loadList=["druid-kafka-indexing-service","druid-datasketches","postgresql-metadata-storage"]
+      - druid_metadata_storage_type=postgresql
+      - druid_metadata_storage_connector_connectURI=jdbc:postgresql://postgres:5432/druid
+      - druid_metadata_storage_connector_user=druid
+      - druid_metadata_storage_connector_password=druid
+      - druid_zk_service_host=zookeeper
+      - druid_broker_http_numConnections=5
+      - druid_processing_buffer_sizeBytes=134217728
+      - druid_processing_numThreads=2
+    command:
+      - broker
+    volumes:
+      - druid_broker_var:/opt/druid/var
+    networks:
+      - kafka-network
+
+  druid-historical:
+    image: apache/druid:36.0.0
+    container_name: druid_historical
+    depends_on:
+      - druid-coordinator
+    ports:
+      - "8083:8083"
+    environment:
+      - druid_extensions_loadList=["druid-kafka-indexing-service","druid-datasketches","postgresql-metadata-storage"]
+      - druid_metadata_storage_type=postgresql
+      - druid_metadata_storage_connector_connectURI=jdbc:postgresql://postgres:5432/druid
+      - druid_metadata_storage_connector_user=druid
+      - druid_metadata_storage_connector_password=druid
+      - druid_zk_service_host=zookeeper
+      - druid_processing_buffer_sizeBytes=134217728
+      - druid_processing_numThreads=2
+    command:
+      - historical
+    volumes:
+      - druid_historical_var:/opt/druid/var
+      - druid_segments:/opt/druid/var/druid/segments
+    networks:
+      - kafka-network
+
+  druid-middlemanager:
+    image: apache/druid:36.0.0
+    container_name: druid_middlemanager
+    depends_on:
+      - druid-coordinator
+    ports:
+      - "8091:8091"
+      - "8100-8105:8100-8105"
+    environment:
+      - druid_extensions_loadList=["druid-kafka-indexing-service","druid-datasketches","postgresql-metadata-storage"]
+      - druid_metadata_storage_type=postgresql
+      - druid_metadata_storage_connector_connectURI=jdbc:postgresql://postgres:5432/druid
+      - druid_metadata_storage_connector_user=druid
+      - druid_metadata_storage_connector_password=druid
+      - druid_zk_service_host=zookeeper
+      - druid_indexer_runner_javaOptsArray=["-server","-Xms256m","-Xmx256m","-XX:MaxDirectMemorySize=1g"]
+      - druid_indexer_fork_property_druid_processing_buffer_sizeBytes=134217728
+      - druid_indexer_fork_property_druid_processing_numThreads=2
+    command:
+      - middleManager
+    volumes:
+      - druid_middlemanager_var:/opt/druid/var
+    networks:
+      - kafka-network
+
+  druid-router:
+    image: apache/druid:36.0.0
+    container_name: druid_router
+    depends_on:
+      - druid-coordinator
+      - druid-broker
+    ports:
+      - "8888:8888"
+    environment:
+      - druid_extensions_loadList=["druid-kafka-indexing-service","druid-datasketches","postgresql-metadata-storage"]
+      - druid_metadata_storage_type=postgresql
+      - druid_metadata_storage_connector_connectURI=jdbc:postgresql://postgres:5432/druid
+      - druid_metadata_storage_connector_user=druid
+      - druid_metadata_storage_connector_password=druid
+      - druid_zk_service_host=zookeeper
+      - druid_router_http_numConnections=5
+      - druid_router_http_readTimeout=PT5M
+      - druid_router_http_numMaxThreads=10
+    command:
+      - router
+    volumes:
+      - druid_router_var:/opt/druid/var
+    networks:
+      - kafka-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8888/status/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Apache Superset
+  superset:
+    image: apache/superset:3.1.0
+    container_name: superset
+    depends_on:
+      druid-router:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=thisISaSECRET_1234
+      - SUPERSET_LOAD_EXAMPLES=no
+    volumes:
+      - superset_home:/app/superset_home
+    command: >
+      sh -c "
+        superset db upgrade &&
+        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin &&
+        superset init &&
+        /usr/bin/run-server.sh
+      "
+    networks:
+      - kafka-network
+
 volumes:
   kafka_data:
     driver: local
   ollama_data:
+    driver: local
+  postgres_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  druid_coordinator_var:
+    driver: local
+  druid_broker_var:
+    driver: local
+  druid_historical_var:
+    driver: local
+  druid_middlemanager_var:
+    driver: local
+  druid_router_var:
+    driver: local
+  druid_segments:
+    driver: local
+  superset_home:
     driver: local
 
 networks:

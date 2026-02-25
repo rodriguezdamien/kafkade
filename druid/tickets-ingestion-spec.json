@@ -1,0 +1,96 @@
+{
+  "type": "kafka",
+  "spec": {
+    "dataSchema": {
+      "dataSource": "tickets",
+      "timestampSpec": {
+        "column": "date",
+        "format": "iso"
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          {
+            "type": "string",
+            "name": "id"
+          },
+          {
+            "type": "string",
+            "name": "sender"
+          },
+          {
+            "type": "string",
+            "name": "message"
+          },
+          {
+            "type": "string",
+            "name": "type",
+            "multiValueHandling": "SORTED_ARRAY"
+          },
+          {
+            "type": "long",
+            "name": "priority"
+          },
+          {
+            "type": "string",
+            "name": "labels",
+            "multiValueHandling": "SORTED_ARRAY"
+          }
+        ]
+      },
+      "metricsSpec": [
+        {
+          "type": "count",
+          "name": "count"
+        },
+        {
+          "type": "longSum",
+          "name": "total_priority",
+          "fieldName": "priority"
+        },
+        {
+          "type": "longMin",
+          "name": "min_priority",
+          "fieldName": "priority"
+        },
+        {
+          "type": "longMax",
+          "name": "max_priority",
+          "fieldName": "priority"
+        },
+        {
+          "type": "hyperUnique",
+          "name": "unique_tickets",
+          "fieldName": "id"
+        },
+        {
+          "type": "hyperUnique",
+          "name": "unique_senders",
+          "fieldName": "sender"
+        }
+      ],
+      "granularitySpec": {
+        "type": "uniform",
+        "segmentGranularity": "HOUR",
+        "queryGranularity": "MINUTE",
+        "rollup": false
+      }
+    },
+    "ioConfig": {
+      "topic": "tickets_labelized",
+      "inputFormat": {
+        "type": "json"
+      },
+      "consumerProperties": {
+        "bootstrap.servers": "kafka:9092"
+      },
+      "taskCount": 1,
+      "replicas": 1,
+      "taskDuration": "PT1H",
+      "useEarliestOffset": true
+    },
+    "tuningConfig": {
+      "type": "kafka",
+      "maxRowsPerSegment": 5000000
+    }
+  }
+}
